@@ -12,7 +12,7 @@
     }
 
     .container {
-      max-width: 800px;
+      width: 90%;
       margin: 0 auto;
     }
 
@@ -47,15 +47,15 @@
       }
       
       .heat-point {
-        width: 20px;
         border-radius: 4px;
-        margin: 0 2%;
+        margin: 0 1.1%;
         transition: all 0.3s ease;
       }      
 
       .heatmap-wrapper {
         display: flex;
         align-items: center;
+        align-items: flex-end;
       }
       .heatmap-main {
         flex: 1;
@@ -65,12 +65,12 @@
         flex-direction: column;
         align-items: center;
         margin-right: 1rem;
-        font-size: 0.75rem;
+        font-size: 1rem;
         color: #4b5563;
       }
       .gradient-bar-vertical {
         width: 10px;
-        height: 100px;
+        height: 150px;
         margin: 4px 0;
         border-radius: 4px;
         background: linear-gradient(to bottom, rgb(255,0,0), rgb(255,255,0), rgb(0,255,0), rgb(0,200,255));
@@ -80,7 +80,10 @@
 <body>
   <div class="container">
     <h1>未来の混雑予測</h1>
-
+    <h2 id="current-time" style="color: #1f2937; margin-bottom: 1.2rem; background: #e0f2fe; padding: 0.5rem 1rem; border-radius: 6px; display: inline-block;">
+        現在時刻：
+    </h2>
+      
     <div class="box">
         <h2>4時間後までの混雑予測</h2>
         <div class="heatmap-wrapper">
@@ -98,6 +101,32 @@
 
   <script>
     const heatmapContainer = document.getElementById("heatmap");
+    // ✅ 現在時刻（日本時間）を表示
+const now = new Date();
+const jstOffset = 9 * 60; // JST = UTC+9
+const jstTime = new Date(now.getTime() + (jstOffset - now.getTimezoneOffset()) * 60000);
+
+const pad = (n) => String(n).padStart(2, "0");
+const formattedNow = `${jstTime.getFullYear()}/${pad(jstTime.getMonth() + 1)}/${pad(jstTime.getDate())} ${pad(jstTime.getHours())}:${pad(jstTime.getMinutes())}`;
+
+document.getElementById("current-time").textContent = `現在時刻：${formattedNow}`;
+// ✅ 現在時刻（日本時間）を表示し続ける関数
+function updateCurrentTime() {
+    const now = new Date();
+    const jstOffset = 9 * 60;
+    const jstTime = new Date(now.getTime() + (jstOffset - now.getTimezoneOffset()) * 60000);
+  
+    const pad = (n) => String(n).padStart(2, "0");
+    const formattedNow = `${jstTime.getFullYear()}/${pad(jstTime.getMonth() + 1)}/${pad(jstTime.getDate())} ${pad(jstTime.getHours())}:${pad(jstTime.getMinutes())}:${pad(jstTime.getSeconds())}`;
+  
+    document.getElementById("current-time").textContent = `現在時刻：${formattedNow}`;
+  }
+  
+  // 初回実行 + 1秒ごとに更新
+  updateCurrentTime();
+  setInterval(updateCurrentTime, 1000);
+  
+
 
     // 🔧 環境に合わせて変更してください
     const apiUrl = "https://funma-app-backend.onrender.com";
@@ -153,18 +182,27 @@
       point.className = "heat-point";
       point.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
       point.style.height = `${height}px`;
-      point.style.width = `20px`; // 幅も固定
+      point.style.width = `3.8%`; // 幅も固定
 
       point.title = `${value}人`;
       pointContainer.appendChild(point);
 
       // 時間ラベル
-      const label = document.createElement("div");
-      label.textContent = d.time.slice(11); // HH:MM
-      label.style.flex = "1";
-      label.style.textAlign = "center";
-      label.style.fontSize = "0.7rem";
-      labelContainer.appendChild(label);
+const label = document.createElement("div");
+const timeStr = d.time.slice(11); // HH:MM
+label.textContent = timeStr;
+label.style.flex = "1";
+label.style.textAlign = "center";
+label.style.fontSize = "1rem";
+
+// ✅ 00分または30分のとき太字
+const minute = timeStr.split(":")[1];
+if (minute === "00") {
+  label.style.fontWeight = "bold";
+  label.style.fontSize = "1.1rem";
+}
+
+labelContainer.appendChild(label);
     });
 
     // ✅ 最後の時間に +15分したラベルだけ追加
@@ -174,11 +212,20 @@
 
     const pad = (n) => String(n).padStart(2, "0");
     const extraLabel = document.createElement("div");
-    extraLabel.textContent = `${pad(lastTime.getHours())}:${pad(lastTime.getMinutes())}`;
-    extraLabel.style.flex = "1";
-    extraLabel.style.textAlign = "center";
-    extraLabel.style.fontSize = "0.7rem";
-    labelContainer.appendChild(extraLabel);
+const extraTimeStr = `${pad(lastTime.getHours())}:${pad(lastTime.getMinutes())}`;
+extraLabel.textContent = extraTimeStr;
+extraLabel.style.flex = "1";
+extraLabel.style.textAlign = "center";
+extraLabel.style.fontSize = "1rem";
+
+// ✅ 追加ラベルも太字チェック
+const extraMin = extraTimeStr.split(":")[1];
+if (extraMin === "00") {
+  extraLabel.style.fontWeight = "bold";
+  extraLabel.style.fontSize = "1.1rem";
+}
+
+labelContainer.appendChild(extraLabel);
   })
   .catch(err => {
     console.error("Heat point fetch error:", err);
