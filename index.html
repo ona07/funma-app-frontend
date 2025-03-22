@@ -101,32 +101,22 @@
 
   <script>
     const heatmapContainer = document.getElementById("heatmap");
-    // ✅ 現在時刻（日本時間）を表示
-const now = new Date();
-const jstOffset = 9 * 60; // JST = UTC+9
-const jstTime = new Date(now.getTime() + (jstOffset - now.getTimezoneOffset()) * 60000);
 
-const pad = (n) => String(n).padStart(2, "0");
-const formattedNow = `${jstTime.getFullYear()}/${pad(jstTime.getMonth() + 1)}/${pad(jstTime.getDate())} ${pad(jstTime.getHours())}:${pad(jstTime.getMinutes())}`;
-
-document.getElementById("current-time").textContent = `現在時刻：${formattedNow}`;
-// ✅ 現在時刻（日本時間）を表示し続ける関数
-function updateCurrentTime() {
-    const now = new Date();
-    const jstOffset = 9 * 60;
-    const jstTime = new Date(now.getTime() + (jstOffset - now.getTimezoneOffset()) * 60000);
+    /// ✅ JST（日本時間）で現在時刻を表示・更新
+function updateCurrentTimeJST() {
+    const nowUTC = new Date();
+    const jst = new Date(nowUTC.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
   
     const pad = (n) => String(n).padStart(2, "0");
-    const formattedNow = `${jstTime.getFullYear()}/${pad(jstTime.getMonth() + 1)}/${pad(jstTime.getDate())} ${pad(jstTime.getHours())}:${pad(jstTime.getMinutes())}:${pad(jstTime.getSeconds())}`;
+    const formatted = `${jst.getFullYear()}/${pad(jst.getMonth() + 1)}/${pad(jst.getDate())} ` +
+                      `${pad(jst.getHours())}:${pad(jst.getMinutes())}:${pad(jst.getSeconds())}`;
   
-    document.getElementById("current-time").textContent = `現在時刻：${formattedNow}`;
+    document.getElementById("current-time").textContent = `現在時刻（日本時間）：${formatted}`;
   }
   
-  // 初回実行 + 1秒ごとに更新
-  updateCurrentTime();
-  setInterval(updateCurrentTime, 1000);
-  
-
+  // 初回表示＋1秒ごとに更新
+  updateCurrentTimeJST();
+  setInterval(updateCurrentTimeJST, 1000);
 
     // 🔧 環境に合わせて変更してください
     const apiUrl = "https://funma-app-backend.onrender.com";
