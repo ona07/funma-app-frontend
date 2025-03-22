@@ -30,6 +30,31 @@
       border: 1px solid #d1d5db;
     }
 
+    .time-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: #4b5563;
+    }
+
+    .heatmap-points {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        height: 120px;
+        margin: 0.5rem;
+      }
+      
+      .heat-point {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin: 0 2px;
+        transition: all 0.3s ease;
+      }
+      
+
     .heatmap-container {
       width: 100%;
       height: 100px;
@@ -38,14 +63,6 @@
       border-radius: 6px;
       position: relative;
     }
-
-    .api-message {
-      padding: 0.5rem;
-      background: #e5e7eb;
-      border: 1px solid #9ca3af;
-      border-radius: 6px;
-      color: #111827;
-    }
   </style>
 </head>
 <body>
@@ -53,65 +70,94 @@
     <h1>未来の混雑予測</h1>
 
     <div class="box">
-      <h2>混雑予測（ヒートマップ）</h2>
-      <div id="heatmap" class="heatmap-container"></div>
-    </div>
-
-    <div class="box">
-      <h2>API 接続テスト</h2>
-      <p id="api-message" class="api-message">Loading...</p>
-    </div>
+        <h2>4時間後までの混雑予測</h2>
+        <div id="heatmap-points" class="heatmap-points"></div>
+        <div id="time-labels" class="time-labels"></div>
+      </div>      
   </div>
-
-  <!-- heatmap.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/heatmap.js/2.0.0/heatmap.min.js"></script>
 
   <script>
     const heatmapContainer = document.getElementById("heatmap");
-    const messageElement = document.getElementById("api-message");
 
     // 🔧 環境に合わせて変更してください
     const apiUrl = "https://funma-app-backend.onrender.com";
 
-    // ✅ API接続テスト
+    // ✅ API接続テスト（コンソール出力のみ）
     fetch(`${apiUrl}/hello`)
       .then(res => res.json())
       .then(data => {
-        messageElement.textContent = data.message;
+        console.log("API 接続テスト:", data.message);
       })
       .catch(err => {
         console.error("API fetch error:", err);
-        messageElement.textContent = "Error fetching data";
       });
 
-    // ✅ ヒートマップ表示
-    fetch(`${apiUrl}/predict`)
-      .then(res => res.json())
-      .then(json => {
-        const predictions = json.predictions;
-        const heatmapInstance = h337.create({
-          container: heatmapContainer,
-          radius: 40,
-          maxOpacity: 0.7,
-          minOpacity: 0.2,
-          blur: 0.75,
-        });
+      fetch(`${apiUrl}/predict`)
+  .then(res => res.json())
+  .then(json => {
+    const predictions = json.predictions;
 
-        const points = predictions.map((d, index) => ({
-          x: (index / predictions.length) * heatmapContainer.clientWidth,
-          y: heatmapContainer.clientHeight / 2,
-          value: Math.round(d.count),
-        }));
+    // ✅ 最後の時間に +15分したデータを追加
+    const last = predictions[predictions.length - 1];
+    const lastTime = new Date(last.time.replace(" ", "T")); // ISO形式に変換
+    lastTime.setMinutes(lastTime.getMinutes() + 15);
 
-        heatmapInstance.setData({
-          max: 30,
-          min: 0,
-          data: points,
-        });
-      })
-      .catch(err => {
-        console.error("Heatmap fetch error:", err);
-      });
+    const pad = (n) => String(n).padStart(2, "0");
+    const formattedTime =
+      `${lastTime.getFullYear()}-${pad(lastTime.getMonth() + 1)}-${pad(lastTime.getDate())} ` +
+      `${pad(lastTime.getHours())}:${pad(lastTime.getMinutes())}`;
+
+    predictions.push({ time: formattedTime, count: 0 }); // count=0の空データを追加
+
+    // 👇この下は既存処理と同じ
+    const pointContainer = document.getElementById("heatmap-points");
+    const labelContainer = document.getElementById("time-labels");
+    pointContainer.innerHTML = "";
+    labelContainer.innerHTML = "";
+
+    const maxCount = Math.max(...predictions.map(p => p.count));
+
+    predictions.forEach(d => {
+      const point = document.createElement("div");
+      const value = Math.round(d.count);
+      const ratio = value / maxCount;
+
+      let r = 0, g = 0, b = 0;
+      if (ratio < 33) {
+        r = 0;
+        g = Math.floor(255 * (ratio / 33));
+        b = 255;
+      } else if (ratio < 66) {
+        r = Math.floor(255 * ((ratio - 33) / 33));
+        g = 255;
+        b = 255 - r;
+      } else {
+        r = 255;
+        g = Math.floor(255 * (1 - (ratio - 66) / 34));
+        b = 0;
+      }
+
+      const size = 60 * ratio;
+
+      point.className = "heat-point";
+      point.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+      point.style.width = `${size}px`;
+      point.style.height = `${size}px`;
+      point.title = `${value}人`;
+
+      pointContainer.appendChild(point);
+
+      const label = document.createElement("div");
+      label.textContent = d.time.slice(11);
+      label.style.flex = "1";
+      label.style.textAlign = "center";
+      label.style.fontSize = "0.7rem";
+      labelContainer.appendChild(label);
+    });
+  })
+  .catch(err => {
+    console.error("Heat point fetch error:", err);
+  });
   </script>
 </body>
 </html>
