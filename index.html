@@ -40,29 +40,41 @@
 
     .heatmap-points {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: flex-end;
         height: 120px;
         margin: 0.5rem;
       }
       
       .heat-point {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        margin: 0 2px;
+        width: 20px;
+        border-radius: 4px;
+        margin: 0 2%;
         transition: all 0.3s ease;
-      }
-      
+      }      
 
-    .heatmap-container {
-      width: 100%;
-      height: 100px;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      position: relative;
-    }
+      .heatmap-wrapper {
+        display: flex;
+        align-items: center;
+      }
+      .heatmap-main {
+        flex: 1;
+      }
+      .heatmap-legend-vertical {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-right: 1rem;
+        font-size: 0.75rem;
+        color: #4b5563;
+      }
+      .gradient-bar-vertical {
+        width: 10px;
+        height: 100px;
+        margin: 4px 0;
+        border-radius: 4px;
+        background: linear-gradient(to bottom, rgb(255,0,0), rgb(255,255,0), rgb(0,255,0), rgb(0,200,255));
+      } 
   </style>
 </head>
 <body>
@@ -71,10 +83,18 @@
 
     <div class="box">
         <h2>4時間後までの混雑予測</h2>
-        <div id="heatmap-points" class="heatmap-points"></div>
-        <div id="time-labels" class="time-labels"></div>
-      </div>      
-  </div>
+        <div class="heatmap-wrapper">
+          <div class="heatmap-legend-vertical">
+            <span>多い</span>
+            <div class="gradient-bar-vertical"></div>
+            <span>少ない</span>
+          </div>
+          <div class="heatmap-main">
+            <div id="heatmap-points" class="heatmap-points"></div>
+            <div id="time-labels" class="time-labels"></div>
+          </div>
+        </div>
+      </div>          
 
   <script>
     const heatmapContainer = document.getElementById("heatmap");
@@ -97,22 +117,10 @@
   .then(json => {
     const predictions = json.predictions;
 
-    // ✅ 最後の時間に +15分したデータを追加
-    const last = predictions[predictions.length - 1];
-    const lastTime = new Date(last.time.replace(" ", "T")); // ISO形式に変換
-    lastTime.setMinutes(lastTime.getMinutes() + 15);
-
-    const pad = (n) => String(n).padStart(2, "0");
-    const formattedTime =
-      `${lastTime.getFullYear()}-${pad(lastTime.getMonth() + 1)}-${pad(lastTime.getDate())} ` +
-      `${pad(lastTime.getHours())}:${pad(lastTime.getMinutes())}`;
-
-    predictions.push({ time: formattedTime, count: 0 }); // count=0の空データを追加
-
-    // 👇この下は既存処理と同じ
     const pointContainer = document.getElementById("heatmap-points");
-    const labelContainer = document.getElementById("time-labels");
     pointContainer.innerHTML = "";
+
+    const labelContainer = document.getElementById("time-labels");
     labelContainer.innerHTML = "";
 
     const maxCount = Math.max(...predictions.map(p => p.count));
@@ -122,6 +130,7 @@
       const value = Math.round(d.count);
       const ratio = value / maxCount;
 
+      // RGB色（強調）
       let r = 0, g = 0, b = 0;
       if (ratio < 33) {
         r = 0;
@@ -137,23 +146,39 @@
         b = 0;
       }
 
-      const size = 60 * ratio;
+      // ヒートポイントの縦棒
+      const maxBarHeight = 100;
+      const height = maxBarHeight * ratio/4;
 
       point.className = "heat-point";
       point.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-      point.style.width = `${size}px`;
-      point.style.height = `${size}px`;
-      point.title = `${value}人`;
+      point.style.height = `${height}px`;
+      point.style.width = `20px`; // 幅も固定
 
+      point.title = `${value}人`;
       pointContainer.appendChild(point);
 
+      // 時間ラベル
       const label = document.createElement("div");
-      label.textContent = d.time.slice(11);
+      label.textContent = d.time.slice(11); // HH:MM
       label.style.flex = "1";
       label.style.textAlign = "center";
       label.style.fontSize = "0.7rem";
       labelContainer.appendChild(label);
     });
+
+    // ✅ 最後の時間に +15分したラベルだけ追加
+    const last = predictions[predictions.length - 1];
+    const lastTime = new Date(last.time.replace(" ", "T"));
+    lastTime.setMinutes(lastTime.getMinutes() + 15);
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const extraLabel = document.createElement("div");
+    extraLabel.textContent = `${pad(lastTime.getHours())}:${pad(lastTime.getMinutes())}`;
+    extraLabel.style.flex = "1";
+    extraLabel.style.textAlign = "center";
+    extraLabel.style.fontSize = "0.7rem";
+    labelContainer.appendChild(extraLabel);
   })
   .catch(err => {
     console.error("Heat point fetch error:", err);
