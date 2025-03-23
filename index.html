@@ -143,12 +143,12 @@ function updateCurrentTimeJST() {
     const labelContainer = document.getElementById("time-labels");
     labelContainer.innerHTML = "";
 
-    const maxCount = Math.max(...predictions.map(p => p.count));
+    const maxCount = Math.max(...predictions.map(p => Number(p.count) || 0));
 
     predictions.forEach(d => {
       const point = document.createElement("div");
-      const value = Math.round(d.count);
-      const ratio = value / maxCount;
+      const value = Number(d.count) || 0;
+      const ratio = maxCount > 0 ? value / maxCount : 0;
 
       // RGB色（強調）
       let r = 0, g = 0, b = 0;
@@ -168,7 +168,7 @@ function updateCurrentTimeJST() {
 
       // ヒートポイントの縦棒
       const maxBarHeight = 100;
-      const height = maxBarHeight * ratio;
+      const height = 10 + maxBarHeight * ratio;
 
       point.className = "heat-point";
       point.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
@@ -184,13 +184,13 @@ const timeStr = d.time.slice(11); // HH:MM
 label.textContent = timeStr;
 label.style.flex = "1";
 label.style.textAlign = "center";
-label.style.fontSize = "1rem";
+label.style.fontSize = "0.8rem";
 
 // ✅ 00分または30分のとき太字
 const minute = timeStr.split(":")[1];
 if (minute === "00") {
   label.style.fontWeight = "bold";
-  label.style.fontSize = "1.1rem";
+  label.style.fontSize = "1rem";
 }
 
 labelContainer.appendChild(label);
@@ -213,7 +213,7 @@ extraLabel.style.fontSize = "1rem";
 const extraMin = extraTimeStr.split(":")[1];
 if (extraMin === "00") {
   extraLabel.style.fontWeight = "bold";
-  extraLabel.style.fontSize = "1.1rem";
+  extraLabel.style.fontSize = "1rem";
 }
 
 labelContainer.appendChild(extraLabel);
