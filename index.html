@@ -111,7 +111,7 @@ function updateCurrentTimeJST() {
     const formatted = `${jst.getFullYear()}/${pad(jst.getMonth() + 1)}/${pad(jst.getDate())} ` +
                       `${pad(jst.getHours())}:${pad(jst.getMinutes())}:${pad(jst.getSeconds())}`;
   
-    document.getElementById("current-time").textContent = `現在時刻（日本時間）：${formatted}`;
+    document.getElementById("current-time").textContent = `現在時刻：${formatted}`;
   }
   
   // 初回表示＋1秒ごとに更新
