@@ -135,6 +135,7 @@ function updateCurrentTimeJST() {
   .then(res => res.json())
   .then(json => {
     const predictions = json.predictions;
+    console.log(json)
 
     const pointContainer = document.getElementById("heatmap-points");
     pointContainer.innerHTML = "";
@@ -151,23 +152,23 @@ function updateCurrentTimeJST() {
 
       // RGB色（強調）
       let r = 0, g = 0, b = 0;
-      if (ratio < 33) {
+      if (ratio < 0.33) {
         r = 0;
-        g = Math.floor(255 * (ratio / 33));
+        g = Math.floor(255 * (ratio / 0.33));
         b = 255;
-      } else if (ratio < 66) {
-        r = Math.floor(255 * ((ratio - 33) / 33));
+      } else if (ratio < 0.66) {
+        r = Math.floor(255 * ((ratio - 0.33) / 0.33));
         g = 255;
         b = 255 - r;
       } else {
         r = 255;
-        g = Math.floor(255 * (1 - (ratio - 66) / 34));
+        g = Math.floor(255 * (1 - (ratio - 0.66) / 0.34));
         b = 0;
       }
 
       // ヒートポイントの縦棒
       const maxBarHeight = 100;
-      const height = maxBarHeight * ratio/4;
+      const height = maxBarHeight * ratio;
 
       point.className = "heat-point";
       point.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
