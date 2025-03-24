@@ -99,128 +99,126 @@
         </div>
       </div>          
 
-  <script>
-    const heatmapContainer = document.getElementById("heatmap");
-
-    /// ✅ JST（日本時間）で現在時刻を表示・更新
-function updateCurrentTimeJST() {
-    const nowUTC = new Date();
-    const jst = new Date(nowUTC.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-  
-    const pad = (n) => String(n).padStart(2, "0");
-    const formatted = `${jst.getFullYear()}/${pad(jst.getMonth() + 1)}/${pad(jst.getDate())} ` +
-                      `${pad(jst.getHours())}:${pad(jst.getMinutes())}:${pad(jst.getSeconds())}`;
-  
-    document.getElementById("current-time").textContent = `現在時刻：${formatted}`;
-  }
-  
-  // 初回表示＋1秒ごとに更新
-  updateCurrentTimeJST();
-  setInterval(updateCurrentTimeJST, 1000);
-
-    // 🔧 環境に合わせて変更してください
-    const apiUrl = "https://funma-app-backend.onrender.com";
-
-    // ✅ API接続テスト（コンソール出力のみ）
-    fetch(`${apiUrl}/hello`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("API 接続テスト:", data.message);
-      })
-      .catch(err => {
-        console.error("API fetch error:", err);
-      });
-
-      fetch(`${apiUrl}/predict`)
-  .then(res => res.json())
-  .then(json => {
-    const predictions = json.predictions;
-    console.log(json)
-
-    const pointContainer = document.getElementById("heatmap-points");
-    pointContainer.innerHTML = "";
-
-    const labelContainer = document.getElementById("time-labels");
-    labelContainer.innerHTML = "";
-
-    const maxCount = Math.max(...predictions.map(p => Number(p.count) || 0));
-
-    predictions.forEach(d => {
-      const point = document.createElement("div");
-      const value = Number(d.count) || 0;
-      const ratio = maxCount > 0 ? value / maxCount : 0;
-
-      // RGB色（強調）
-      let r = 0, g = 0, b = 0;
-      if (ratio < 0.33) {
-        r = 0;
-        g = Math.floor(255 * (ratio / 0.33));
-        b = 255;
-      } else if (ratio < 0.66) {
-        r = Math.floor(255 * ((ratio - 0.33) / 0.33));
-        g = 255;
-        b = 255 - r;
-      } else {
-        r = 255;
-        g = Math.floor(255 * (1 - (ratio - 0.66) / 0.34));
-        b = 0;
-      }
-
-      // ヒートポイントの縦棒
-      const maxBarHeight = 100;
-      const height = 10 + maxBarHeight * ratio;
-
-      point.className = "heat-point";
-      point.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-      point.style.height = `${height}px`;
-      point.style.width = `3.8%`; // 幅も固定
-
-      point.title = `${value}人`;
-      pointContainer.appendChild(point);
-
-      // 時間ラベル
-const label = document.createElement("div");
-const timeStr = d.time.slice(11); // HH:MM
-label.textContent = timeStr;
-label.style.flex = "1";
-label.style.textAlign = "center";
-label.style.fontSize = "0.8rem";
-
-// ✅ 00分または30分のとき太字
-const minute = timeStr.split(":")[1];
-if (minute === "00") {
-  label.style.fontWeight = "bold";
-  label.style.fontSize = "1rem";
-}
-
-labelContainer.appendChild(label);
-    });
-
-    // ✅ 最後の時間に +15分したラベルだけ追加
-    const last = predictions[predictions.length - 1];
-    const lastTime = new Date(last.time.replace(" ", "T"));
-    lastTime.setMinutes(lastTime.getMinutes() + 15);
-
-    const pad = (n) => String(n).padStart(2, "0");
-    const extraLabel = document.createElement("div");
-const extraTimeStr = `${pad(lastTime.getHours())}:${pad(lastTime.getMinutes())}`;
-extraLabel.textContent = extraTimeStr;
-extraLabel.style.flex = "1";
-extraLabel.style.textAlign = "center";
-extraLabel.style.fontSize = "1rem";
-
-// ✅ 追加ラベルも太字チェック
-const extraMin = extraTimeStr.split(":")[1];
-if (extraMin === "00") {
-  extraLabel.style.fontWeight = "bold";
-  extraLabel.style.fontSize = "1rem";
-}
-
-labelContainer.appendChild(extraLabel);
-  })
-  .catch(err => {
-    console.error("Heat point fetch error:", err);
-  });
-  </script>
+      <script>
+        const apiUrl = "https://funma-app-backend.onrender.com";
+      
+        // ✅ 現在時刻をJSTで1秒ごとに更新
+        function updateCurrentTimeJST() {
+          const nowUTC = new Date();
+          const jst = new Date(nowUTC.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+          const pad = (n) => String(n).padStart(2, "0");
+          const formatted = `${jst.getFullYear()}/${pad(jst.getMonth() + 1)}/${pad(jst.getDate())} ` +
+                            `${pad(jst.getHours())}:${pad(jst.getMinutes())}:${pad(jst.getSeconds())}`;
+          document.getElementById("current-time").textContent = `現在時刻：${formatted}`;
+        }
+      
+        updateCurrentTimeJST();
+        setInterval(updateCurrentTimeJST, 1000); // 1秒ごとに更新
+      
+        // ✅ ヒートマップを描画する処理
+        function fetchAndUpdateHeatmap() {
+          fetch(`${apiUrl}/predict`)
+            .then(res => res.json())
+            .then(json => {
+              const predictions = json.predictions;
+      
+              const pointContainer = document.getElementById("heatmap-points");
+              pointContainer.innerHTML = "";
+      
+              const labelContainer = document.getElementById("time-labels");
+              labelContainer.innerHTML = "";
+      
+              const maxCount = Math.max(...predictions.map(p => Number(p.count) || 0));
+      
+              predictions.forEach(d => {
+                const point = document.createElement("div");
+                const value = Number(d.count) || 0;
+                const ratio = maxCount > 0 ? value / maxCount : 0;
+      
+                // 色計算
+                let r = 0, g = 0, b = 0;
+                if (ratio < 0.33) {
+                  r = 0;
+                  g = Math.floor(255 * (ratio / 0.33));
+                  b = 255;
+                } else if (ratio < 0.66) {
+                  r = Math.floor(255 * ((ratio - 0.33) / 0.33));
+                  g = 255;
+                  b = 255 - r;
+                } else {
+                  r = 255;
+                  g = Math.floor(255 * (1 - (ratio - 0.66) / 0.34));
+                  b = 0;
+                }
+      
+                const maxBarHeight = 100;
+                const height = 10 + maxBarHeight * ratio;
+      
+                point.className = "heat-point";
+                point.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                point.style.height = `${height}px`;
+                point.style.width = `3.8%`;
+                point.title = `${value}人`;
+                pointContainer.appendChild(point);
+      
+                // 時間ラベル
+                const label = document.createElement("div");
+                const timeStr = d.time.slice(11);
+                label.textContent = timeStr;
+                label.style.flex = "1";
+                label.style.textAlign = "center";
+                label.style.fontSize = "0.8rem";
+      
+                const minute = timeStr.split(":")[1];
+                if (minute === "00") {
+                  label.style.fontWeight = "bold";
+                  label.style.fontSize = "1rem";
+                }
+      
+                labelContainer.appendChild(label);
+              });
+      
+              // 最後に+15分の時間ラベル追加
+              const last = predictions[predictions.length - 1];
+              const lastTime = new Date(last.time.replace(" ", "T"));
+              lastTime.setMinutes(lastTime.getMinutes() + 15);
+      
+              const pad = (n) => String(n).padStart(2, "0");
+              const extraLabel = document.createElement("div");
+              const extraTimeStr = `${pad(lastTime.getHours())}:${pad(lastTime.getMinutes())}`;
+              extraLabel.textContent = extraTimeStr;
+              extraLabel.style.flex = "1";
+              extraLabel.style.textAlign = "center";
+              extraLabel.style.fontSize = "1rem";
+      
+              const extraMin = extraTimeStr.split(":")[1];
+              if (extraMin === "00") {
+                extraLabel.style.fontWeight = "bold";
+                extraLabel.style.fontSize = "1rem";
+              }
+      
+              labelContainer.appendChild(extraLabel);
+            })
+            .catch(err => {
+              console.error("Heat point fetch error:", err);
+            });
+        }
+      
+        // ✅ 初回描画
+        fetchAndUpdateHeatmap();
+      
+        // ✅ 1時間ごとに更新（3600000ms）
+        setInterval(fetchAndUpdateHeatmap, 3600000);
+      
+        // ✅ 接続テスト（コンソール用）
+        fetch(`${apiUrl}/hello`)
+          .then(res => res.json())
+          .then(data => {
+            console.log("API 接続テスト:", data.message);
+          })
+          .catch(err => {
+            console.error("API fetch error:", err);
+          });
+      </script>
 </body>
 </html>
