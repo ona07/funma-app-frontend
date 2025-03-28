@@ -121,6 +121,7 @@
             .then(res => res.json())
             .then(json => {
               const predictions = json.predictions;
+              console.log(json)
       
               const pointContainer = document.getElementById("heatmap-points");
               pointContainer.innerHTML = "";
@@ -198,6 +199,29 @@
               }
       
               labelContainer.appendChild(extraLabel);
+
+              // 時間ラベル
+const label = document.createElement("div");
+const timeStr = d.time.slice(11); // HH:MM
+label.textContent = timeStr;
+label.style.flex = "1";
+label.style.textAlign = "center";
+label.style.fontSize = "0.8rem";
+
+// ✅ 現在時刻と比較
+const labelTime = new Date(d.time.replace(" ", "T"));
+if (labelTime < now) {
+  label.style.opacity = "0.4"; // ← 薄くする
+} else {
+  label.style.opacity = "1";   // ← 通常表示
+}
+
+// ✅ 00分は太字
+const minute = timeStr.split(":")[1];
+if (minute === "00") {
+  label.style.fontWeight = "bold";
+  label.style.fontSize = "1rem";
+}
             })
             .catch(err => {
               console.error("Heat point fetch error:", err);
